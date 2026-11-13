@@ -20,24 +20,6 @@ cwe run 121           # build and run CWE-121 with AddressSanitizer
 
 Every command prints the exact compiler command it runs, so you can copy it and change it.
 
-### Running outside the container
-
-Build the docker image:
-
-```bash
-docker build -t hack-your-cpp .devcontainer
-```
-
-Run a shell in the container:
-
-```bash
-docker run --rm -it \
-  -v "$PWD":/work -w /work \
-  --user "$(id -u):$(id -g)" \
-  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-  hack-your-cpp bash -c 'export PATH=/work:$PATH; exec bash'
-```
-
 ## Commands
 
 ```bash
@@ -61,6 +43,24 @@ cwe profiles                           # all profiles and their flags
 ```
 
 In VS Code, the same commands are available under *Terminal → Run Task*.
+
+### Running outside `.devcontainer`
+
+Build the docker image:
+
+```bash
+docker build -t hack-your-cpp .devcontainer
+```
+
+Run a shell in the container:
+
+```bash
+docker run --rm -it \
+  -v "$PWD":/work -w /work \
+  --user "$(id -u):$(id -g)" \
+  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+  hack-your-cpp bash -c 'export PATH=/work:$PATH; exec bash'
+```
 
 ## Profiles
 
