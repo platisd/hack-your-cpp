@@ -6,7 +6,7 @@ tidy_checks = ["bugprone-*", "clang-analyzer-*"]
 args = ["0x200"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "SIGSEGV"
 
 [[expect]]

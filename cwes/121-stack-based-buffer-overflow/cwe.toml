@@ -6,7 +6,7 @@ tidy_checks = ["bugprone-*", "clang-analyzer-*", "cert-*"]
 args = ["40"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 silent = true
 
 [[expect]]

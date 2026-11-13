@@ -43,7 +43,7 @@
       "id": "profile",
       "type": "pickString",
       "description": "Profile",
-      "options": ["asan", "ubsan", "msan", "tsan", "integer", "valgrind", "plain", "warnings", "analyzer", "hardened", "glibcxx-assertions", "stl-debug", "fortify2", "fortify3", "stack-protector", "vptr", "cfi"]
+      "options": ["asan", "ubsan", "msan", "tsan", "integer", "valgrind", "unprotected", "warnings", "analyzer", "hardened", "glibcxx-assertions", "stl-debug", "fortify2", "fortify3", "stack-protector", "vptr", "cfi"]
     },
     {
       "id": "compiler",

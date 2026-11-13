@@ -6,7 +6,7 @@ tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-narrowing-co
 args = ["400", "300"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "malloc\\(\\): corrupted"
 
 [[expect]]

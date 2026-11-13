@@ -6,7 +6,7 @@ The driver calls `signFirmware()` after `offsets()`, it has a signing key on its
 
 ## Things to try
 
-- `cwe run 562 -p plain`, what does the app get instead of the offsets? Then with `--cc clang`
+- `cwe run 562 -p unprotected`, what does the app get instead of the offsets? Then with `--cc clang`
 - `cwe run 562 -p asan`
 - `cwe run 562 -p warnings`, then with `--cc clang`
 - `cwe run 562 -p analyzer`

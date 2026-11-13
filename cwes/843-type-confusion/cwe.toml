@@ -6,7 +6,7 @@ tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-pro-type-*"]
 args = ["2"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "Camera password: hunter2"
 
 [[expect]]

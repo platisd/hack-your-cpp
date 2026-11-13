@@ -6,7 +6,7 @@ tidy_checks = ["bugprone-unused-return-value", "clang-analyzer-*"]
 args = ["1024"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "double free or corruption"
 
 [[expect]]

@@ -6,7 +6,7 @@ tidy_checks = ["cppcoreguidelines-pro-bounds-*"]
 args = ["100"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 silent = true
 
 [[expect]]

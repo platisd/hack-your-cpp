@@ -238,7 +238,7 @@ def describe(expect):
     elif tool == "fuzz":
         what = f"clang fuzz {expect.get('time', 60)}s"
     else:
-        what = f"{expect['cc']} {'+'.join(expect.get('profiles', ['plain']))} {' '.join(expect.get('flags', []))}"
+        what = f"{expect['cc']} {'+'.join(expect.get('profiles', ['unprotected']))} {' '.join(expect.get('flags', []))}"
     return f"{what.strip()}{' (fixed)' if expect.get('variant') == 'fixed' else ''}"
 
 
@@ -254,7 +254,7 @@ def check(cwe_dir, index, expect):
             code, output = fuzz(cwe_dir, variant, expect.get("time", 60), out_dir, show=False, seed=1)
         else:
             args = expect.get("args", trigger_args(cwe_dir, variant))
-            profiles = expect.get("profiles", ["plain"])
+            profiles = expect.get("profiles", ["unprotected"])
             code, output = build_and_run(
                 cwe_dir, variant, expect["cc"], profiles, expect.get("flags", []), args, out_dir, show=False
             )

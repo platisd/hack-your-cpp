@@ -1,4 +1,4 @@
-[plain]
+[unprotected]
 description = "Baseline only: no sanitizers, no hardening"
 
 [warnings]

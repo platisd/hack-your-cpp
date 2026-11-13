@@ -6,7 +6,7 @@ The app requests an unsupported resolution three times, each attempt leaks a DMA
 
 ## Things to try
 
-- `cwe run 401 -p plain`, the driver's counter notices
+- `cwe run 401 -p unprotected`, the driver's counter notices
 - `cwe run 401 -p asan`
 - `cwe run 401 -p valgrind`
 - `cwe tidy 401`, which check fires and why does it hint at the bug?

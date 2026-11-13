@@ -45,8 +45,8 @@ cwe run 121 -p fortify3                # pick a profile
 cwe run 121 -p asan --cc clang -O 1    # pick a compiler and an optimization level
 cwe run 121 -p asan -p ubsan           # combine profiles
 cwe run 121 --fixed -p asan            # the fixed variant, same input
-cwe run 121 -p plain -- 10             # your own input for the trigger
-cwe run 121 -p plain --flag=-fsanitize=bounds
+cwe run 121 -p unprotected -- 10       # your own input for the trigger
+cwe run 121 -p unprotected --flag=-fsanitize=bounds
 
 cwe tidy 170                           # clang-tidy with the checks relevant to the CWE
 cwe tidy 170 --fixed

@@ -3,7 +3,7 @@ title = "Return of Stack Variable Address"
 tidy_checks = ["bugprone-*", "clang-analyzer-*"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "5678.90"
 
 [[expect]]

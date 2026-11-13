@@ -6,7 +6,7 @@ tidy_checks = ["clang-analyzer-*", "bugprone-narrowing-conversions"]
 args = ["4294967040", "256"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "SIGSEGV"
 
 [[expect]]

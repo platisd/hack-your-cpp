@@ -6,7 +6,7 @@ tidy_checks = ["cppcoreguidelines-pro-bounds-constant-array-index", "bugprone-*"
 args = ["-1"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 silent = true
 
 [[expect]]

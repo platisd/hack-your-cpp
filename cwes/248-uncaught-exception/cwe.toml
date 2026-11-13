@@ -7,11 +7,11 @@ args = ["N/A"]
 
 [[expect]]
 cc = ["gcc", "clang"]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "terminate called after throwing an instance of 'std::invalid_argument'"
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 args = ["19.0"]
 silent = true
 

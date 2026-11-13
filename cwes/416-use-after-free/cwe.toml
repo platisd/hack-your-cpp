@@ -3,7 +3,7 @@ title = "Use After Free"
 tidy_checks = ["bugprone-*", "clang-analyzer-*"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 silent = true
 
 [[expect]]

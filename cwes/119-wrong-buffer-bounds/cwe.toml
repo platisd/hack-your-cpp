@@ -3,7 +3,7 @@ title = "Improper Restriction of Operations within the Bounds of a Memory Buffer
 tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-pro-bounds-*"]
 
 [[expect]]
-profiles = ["plain"]
+profiles = ["unprotected"]
 detects = "SIGSEGV"
 
 [[expect]]
