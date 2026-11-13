@@ -1,0 +1,25 @@
+id = 843
+title = "Access of Resource Using Incompatible Type"
+tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-pro-type-*"]
+
+[trigger]
+args = ["2"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "Camera password: hunter2"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+detects = "Camera password: correct horse battery staple"

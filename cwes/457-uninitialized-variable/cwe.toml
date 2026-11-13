@@ -1,0 +1,45 @@
+id = 457
+title = "Use of Uninitialized Variable"
+tidy_checks = ["cppcoreguidelines-pro-type-member-init", "clang-analyzer-*"]
+
+[trigger]
+args = ["0x99"]
+
+[[expect]]
+cc = "clang"
+profiles = ["msan"]
+detects = "use-of-uninitialized-value"
+
+[[expect]]
+profiles = ["valgrind"]
+detects = "Conditional jump or move depends on uninitialised value"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+profiles = ["warnings"]
+flags = ["-O2"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+detects = "uninitialized record type: 'session'"
+
+[[expect]]
+variant = "fixed"
+cc = "clang"
+profiles = ["msan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+profiles = ["valgrind"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+tool = "tidy"
+silent = true

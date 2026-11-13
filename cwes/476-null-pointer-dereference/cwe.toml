@@ -1,0 +1,39 @@
+id = 476
+title = "NULL Pointer Dereference"
+tidy_checks = ["bugprone-*", "clang-analyzer-*"]
+
+[trigger]
+args = ["0x200"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "SIGSEGV"
+
+[[expect]]
+profiles = ["ubsan"]
+detects = "member access within null pointer"
+
+[[expect]]
+cc = "clang"
+profiles = ["ubsan"]
+detects = "member call on null pointer"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "SEGV on unknown address 0x000000000000"
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "SEGV on unknown address"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

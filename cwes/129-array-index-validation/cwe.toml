@@ -1,0 +1,43 @@
+id = 129
+title = "Improper Validation of Array Index"
+tidy_checks = ["cppcoreguidelines-pro-bounds-constant-array-index", "bugprone-*"]
+
+[trigger]
+args = ["-1"]
+
+[[expect]]
+profiles = ["plain"]
+silent = true
+
+[[expect]]
+profiles = ["asan"]
+detects = "stack-buffer-overflow"
+
+[[expect]]
+cc = "clang"
+profiles = ["asan"]
+detects = "stack-buffer-underflow"
+
+[[expect]]
+profiles = ["glibcxx-assertions"]
+detects = "__n < this->size\\(\\)"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+detects = "-Wsign-conversion"
+
+[[expect]]
+tool = "tidy"
+detects = "cppcoreguidelines-pro-bounds-constant-array-index"
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "ERROR: AddressSanitizer"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

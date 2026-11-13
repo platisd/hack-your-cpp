@@ -1,0 +1,44 @@
+id = 415
+title = "Double Free"
+tidy_checks = ["bugprone-unused-return-value", "clang-analyzer-*"]
+
+[trigger]
+args = ["1024"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "double free or corruption"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "attempting double-free"
+
+[[expect]]
+profiles = ["asan"]
+args = ["100"]
+silent = true
+
+[[expect]]
+profiles = ["valgrind"]
+detects = "Invalid free\\(\\)"
+
+[[expect]]
+tool = "tidy"
+detects = "bugprone-unused-return-value"
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "attempting double-free"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+tool = "tidy"
+silent = true

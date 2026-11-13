@@ -1,0 +1,50 @@
+id = 121
+title = "Stack-based Buffer Overflow"
+tidy_checks = ["bugprone-*", "clang-analyzer-*", "cert-*"]
+
+[trigger]
+args = ["40"]
+
+[[expect]]
+profiles = ["plain"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "stack-buffer-overflow"
+
+[[expect]]
+profiles = ["fortify2"]
+misses = "buffer overflow detected"
+
+[[expect]]
+profiles = ["fortify3"]
+detects = "buffer overflow detected"
+
+[[expect]]
+profiles = ["stack-protector"]
+detects = "stack smashing detected"
+
+[[expect]]
+profiles = ["glibcxx-assertions"]
+detects = "__n < this->size\\(\\)"
+
+[[expect]]
+profiles = ["warnings"]
+detects = "-Wsign-conversion"
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+profiles = ["warnings"]
+silent = true

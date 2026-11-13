@@ -1,0 +1,50 @@
+id = 119
+title = "Improper Restriction of Operations within the Bounds of a Memory Buffer"
+tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-pro-bounds-*"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "SIGSEGV"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "stack-buffer-overflow"
+
+[[expect]]
+cc = "clang"
+profiles = ["asan"]
+flags = ["-O1"]
+silent = true
+
+[[expect]]
+profiles = ["asan"]
+flags = ["-O1"]
+detects = "stack-buffer-overflow"
+
+[[expect]]
+profiles = ["fortify2"]
+detects = "buffer overflow detected"
+
+[[expect]]
+profiles = ["stack-protector"]
+detects = "stack smashing detected"
+
+[[expect]]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "stack-buffer-overflow"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

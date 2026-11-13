@@ -1,0 +1,39 @@
+id = 401
+title = "Missing Release of Memory after Effective Lifetime"
+tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-*"]
+
+[trigger]
+args = ["3"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "DMA buffers in use: 3"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "LeakSanitizer: detected memory leaks"
+
+[[expect]]
+profiles = ["valgrind"]
+detects = "in 3 blocks are definitely lost"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+detects = "cppcoreguidelines-special-member-functions"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+tool = "tidy"
+silent = true

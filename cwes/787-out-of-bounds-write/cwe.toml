@@ -1,0 +1,38 @@
+id = 787
+title = "Out-of-bounds Write"
+tidy_checks = ["cppcoreguidelines-pro-bounds-*"]
+
+[trigger]
+args = ["100"]
+
+[[expect]]
+profiles = ["plain"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+silent = true
+
+[[expect]]
+profiles = ["ubsan"]
+detects = "index 64 out of bounds"
+
+[[expect]]
+cc = "clang"
+profiles = ["ubsan"]
+silent = true
+
+[[expect]]
+profiles = ["hardened"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+detects = "cppcoreguidelines-pro-bounds-constant-array-index"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

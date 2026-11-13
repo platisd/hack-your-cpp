@@ -1,0 +1,55 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "cwe: run",
+      "type": "shell",
+      "command": "./cwe run ${input:cwe} -p ${input:profile} --cc ${input:compiler}",
+      "problemMatcher": []
+    },
+    {
+      "label": "cwe: run fixed",
+      "type": "shell",
+      "command": "./cwe run ${input:cwe} -p ${input:profile} --cc ${input:compiler} --fixed",
+      "problemMatcher": []
+    },
+    {
+      "label": "cwe: tidy",
+      "type": "shell",
+      "command": "./cwe tidy ${input:cwe}",
+      "problemMatcher": []
+    },
+    {
+      "label": "cwe: fuzz",
+      "type": "shell",
+      "command": "./cwe fuzz ${input:cwe}",
+      "problemMatcher": []
+    },
+    {
+      "label": "cwe: matrix",
+      "type": "shell",
+      "command": "./cwe matrix ${input:cwe}",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "cwe",
+      "type": "pickString",
+      "description": "CWE",
+      "options": ["787", "125", "416", "119", "476", "120", "121", "122", "415", "825", "457", "401", "562", "129", "680", "362", "248", "170", "134", "843"]
+    },
+    {
+      "id": "profile",
+      "type": "pickString",
+      "description": "Profile",
+      "options": ["asan", "ubsan", "msan", "tsan", "integer", "valgrind", "plain", "warnings", "analyzer", "hardened", "glibcxx-assertions", "stl-debug", "fortify2", "fortify3", "stack-protector", "vptr", "cfi"]
+    },
+    {
+      "id": "compiler",
+      "type": "pickString",
+      "description": "Compiler",
+      "options": ["gcc", "clang"]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+id = 680
+title = "Integer Overflow to Buffer Overflow"
+tidy_checks = ["clang-analyzer-*", "bugprone-narrowing-conversions"]
+
+[trigger]
+args = ["4294967040", "256"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "SIGSEGV"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "SEGV on unknown address"
+
+[[expect]]
+cc = "clang"
+profiles = ["integer"]
+detects = "changed the value to 0"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+detects = "-Wconversion|-Wshorten-64-to-32"
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "ERROR: AddressSanitizer"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = "clang"
+profiles = ["integer"]
+silent = true

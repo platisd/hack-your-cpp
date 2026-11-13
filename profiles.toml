@@ -1,0 +1,73 @@
+[plain]
+description = "Baseline only: no sanitizers, no hardening"
+
+[warnings]
+description = "Compiler warnings, including some that -Wall -Wextra leave out"
+compile_only = true
+flags = ["-Wall", "-Wextra", "-Wconversion", "-Wsign-conversion", "-Wformat-nonliteral"]
+
+[analyzer]
+description = "GCC static analyzer"
+compilers = ["gcc"]
+compile_only = true
+flags = ["-fanalyzer"]
+
+[asan]
+description = "AddressSanitizer (includes LeakSanitizer)"
+flags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
+
+[ubsan]
+description = "UndefinedBehaviorSanitizer"
+flags = ["-fsanitize=undefined", "-fno-sanitize-recover=all"]
+
+[msan]
+description = "MemorySanitizer, uninitialized reads"
+compilers = ["clang"]
+flags = ["-fsanitize=memory", "-fno-omit-frame-pointer"]
+
+[tsan]
+description = "ThreadSanitizer, data races"
+flags = ["-fsanitize=thread"]
+
+[integer]
+description = "Clang's integer checks, incl. unsigned wraparound (not UB)"
+compilers = ["clang"]
+flags = ["-fsanitize=integer,implicit-conversion", "-fno-sanitize-recover=all"]
+
+[vptr]
+description = "Clang's dynamic type checks for polymorphic types"
+compilers = ["clang"]
+flags = ["-fsanitize=vptr", "-fno-sanitize-recover=all"]
+
+[cfi]
+description = "Clang's Control Flow Integrity for casts"
+compilers = ["clang"]
+flags = ["-fsanitize=cfi-unrelated-cast,cfi-derived-cast", "-fno-sanitize-trap=cfi", "-flto", "-fvisibility=hidden", "-fuse-ld=lld"]
+
+[hardened]
+description = "Production hardening: everything below combined"
+flags = ["-O2", "-D_GLIBCXX_ASSERTIONS", "-D_FORTIFY_SOURCE=3", "-fstack-protector-strong"]
+
+[glibcxx-assertions]
+description = "Hardened standard library (libstdc++)"
+flags = ["-D_GLIBCXX_ASSERTIONS"]
+
+[stl-debug]
+description = "libstdc++ debug mode, tracks iterators"
+flags = ["-D_GLIBCXX_DEBUG"]
+
+[fortify2]
+description = "glibc buffer checks, compile-time sizes"
+flags = ["-O2", "-D_FORTIFY_SOURCE=2"]
+
+[fortify3]
+description = "glibc buffer checks, also run-time sizes"
+flags = ["-O2", "-D_FORTIFY_SOURCE=3"]
+
+[stack-protector]
+description = "Stack canaries"
+flags = ["-fstack-protector-strong"]
+
+[valgrind]
+description = "Run under Valgrind memcheck, no special build"
+runner = ["valgrind", "-q", "--error-exitcode=99", "--track-origins=yes", "--leak-check=full"]

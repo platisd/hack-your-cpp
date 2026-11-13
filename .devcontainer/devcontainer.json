@@ -1,0 +1,12 @@
+{
+  "name": "hack-your-cpp",
+  "build": { "dockerfile": "Dockerfile" },
+  "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
+  "remoteUser": "ubuntu",
+  "remoteEnv": { "PATH": "${containerWorkspaceFolder}:${containerEnv:PATH}" },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools", "tamasfe.even-better-toml"]
+    }
+  }
+}

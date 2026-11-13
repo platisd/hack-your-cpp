@@ -1,0 +1,36 @@
+id = 248
+title = "Uncaught Exception"
+tidy_checks = ["bugprone-exception-escape"]
+
+[trigger]
+args = ["N/A"]
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["plain"]
+detects = "terminate called after throwing an instance of 'std::invalid_argument'"
+
+[[expect]]
+profiles = ["plain"]
+args = ["19.0"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "deadly signal"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

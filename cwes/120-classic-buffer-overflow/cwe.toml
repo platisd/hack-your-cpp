@@ -1,0 +1,42 @@
+id = 120
+title = "Buffer Copy without Checking Size of Input (Classic Buffer Overflow)"
+tidy_checks = ["bugprone-*", "clang-analyzer-*", "cppcoreguidelines-pro-bounds-*"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "SIGSEGV"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "stack-buffer-overflow"
+
+[[expect]]
+profiles = ["fortify2"]
+detects = "buffer overflow detected"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "ERROR: AddressSanitizer"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+tool = "fuzz"
+time = 10
+silent = true

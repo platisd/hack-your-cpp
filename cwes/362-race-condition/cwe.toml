@@ -1,0 +1,26 @@
+id = 362
+title = "Concurrent Execution using Shared Resource with Improper Synchronization (Race Condition)"
+tidy_checks = ["bugprone-*", "clang-analyzer-*", "concurrency-*"]
+
+[trigger]
+args = ["10000"]
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["tsan"]
+detects = "ThreadSanitizer: data race"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["tsan"]
+silent = true

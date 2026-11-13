@@ -1,0 +1,41 @@
+id = 562
+title = "Return of Stack Variable Address"
+tidy_checks = ["bugprone-*", "clang-analyzer-*"]
+
+[[expect]]
+profiles = ["plain"]
+detects = "5678.90"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "stack-use-after-return"
+
+[[expect]]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+cc = "clang"
+profiles = ["warnings"]
+detects = "-Wreturn-stack-address"
+
+[[expect]]
+profiles = ["analyzer"]
+detects = "stale stack frame"
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true

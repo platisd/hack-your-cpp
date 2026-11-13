@@ -1,0 +1,36 @@
+id = 170
+title = "Improper Null Termination"
+tidy_checks = ["bugprone-suspicious-stringview-data-usage"]
+
+[trigger]
+args = ["LOG:a-really-long-track-name.gpx"]
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "stack-buffer-overflow"
+
+[[expect]]
+profiles = ["asan"]
+args = ["LOG:track.gpx"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+detects = "bugprone-suspicious-stringview-data-usage"
+
+[[expect]]
+variant = "fixed"
+tool = "tidy"
+detects = "bugprone-suspicious-stringview-data-usage"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

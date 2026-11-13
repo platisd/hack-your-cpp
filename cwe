@@ -1,0 +1,351 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import re
+import shlex
+import shutil
+import signal
+import subprocess
+import sys
+import threading
+import tomllib
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+CWES = ROOT / "cwes"
+BUILD = ROOT / "build"
+COMPILERS = {"gcc": "g++", "clang": "clang++"}
+BASELINE = ["-std=c++23", "-g", "-U_FORTIFY_SOURCE", "-fno-stack-protector", "-D_GLIBCXX_NO_ASSERTIONS", "-Icommon"]
+DIAGNOSTIC = re.compile(r"\b(warning|error):")
+TIMEOUT = 120
+BOLD, DIM, RED, GREEN, RESET = (
+    ("\033[1m", "\033[2m", "\033[31m", "\033[32m", "\033[0m") if sys.stdout.isatty() else ("",) * 5
+)
+
+
+class LabError(Exception):
+    pass
+
+
+def load_toml(path):
+    return tomllib.loads(path.read_text())
+
+
+PROFILES = load_toml(ROOT / "profiles.toml")
+
+
+def all_cwes():
+    return sorted(CWES.iterdir(), key=lambda path: int(path.name.split("-")[0]))
+
+
+def find_cwe(cwe_id):
+    for cwe_dir in all_cwes():
+        if cwe_dir.name.split("-")[0] == str(cwe_id).removeprefix("CWE-"):
+            return cwe_dir
+    raise LabError(f"There is no CWE-{cwe_id} here, see: cwe list")
+
+
+def rel(path):
+    return os.path.relpath(path, ROOT)
+
+
+def execute(cmd, cwd=ROOT, show=True, timeout=TIMEOUT):
+    if show:
+        location = f"cd {rel(cwd)} && " if cwd != ROOT else ""
+        print(f"{BOLD}$ {location}{shlex.join(cmd)}{RESET}", flush=True)
+    lines = []
+    with subprocess.Popen(
+        cmd,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        text=True,
+        errors="replace",
+    ) as process:
+        timer = threading.Timer(timeout, process.kill)
+        timer.start()
+        for line in process.stdout:
+            lines.append(line)
+            if show:
+                print(line, end="", flush=True)
+        process.wait()
+        timer.cancel()
+    if process.returncode < 0:
+        lines.append(f"Terminated by {signal.Signals(-process.returncode).name}\n")
+        if show:
+            print(f"{RED}{lines[-1]}{RESET}", end="")
+    return process.returncode, "".join(lines)
+
+
+def profile_settings(names, cc):
+    flags, runner, compile_only = [], [], False
+    for name in names:
+        if name not in PROFILES:
+            raise LabError(f"Unknown profile '{name}', see: cwe profiles")
+        profile = PROFILES[name]
+        if cc not in profile.get("compilers", COMPILERS):
+            raise LabError(f"Profile '{name}' needs --cc {profile['compilers'][0]}")
+        flags += profile.get("flags", [])
+        runner = profile.get("runner", runner)
+        compile_only |= profile.get("compile_only", False)
+    return flags, runner, compile_only
+
+
+def build_dir(cwe_dir, *parts):
+    name = "-".join(re.sub(r"[^\w.=+]+", "_", part).strip("_") for part in parts if part)
+    path = BUILD / cwe_dir.name / name
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def trigger_args(cwe_dir, variant):
+    trigger = load_toml(cwe_dir / "cwe.toml").get("trigger", {})
+    return trigger.get(variant, {}).get("args", trigger.get("args", []))
+
+
+def build_and_run(cwe_dir, variant, cc, profiles, flags, args, out_dir, show):
+    profile_flags, runner, compile_only = profile_settings(profiles, cc)
+    binary = out_dir / ("main.o" if compile_only else "main")
+    compile_cmd = [
+        COMPILERS[cc],
+        *BASELINE,
+        *profile_flags,
+        *flags,
+        f'-DLAB_VARIANT="{variant}.hpp"',
+        rel(cwe_dir / "main.cpp"),
+        *(["-c"] if compile_only else []),
+        "-o",
+        rel(binary),
+    ]
+    code, output = execute(compile_cmd, show=show)
+    if code != 0 or compile_only:
+        return code, output
+    run_code, run_output = execute([*runner, "./main", *args], cwd=out_dir, show=show)
+    return run_code, output + run_output
+
+
+def tidy(cwe_dir, variant, checks, show):
+    cmd = [
+        "clang-tidy",
+        "--quiet",
+        f"--checks=-*,{checks}",
+        rel(cwe_dir / f"{variant}.hpp"),
+        "--",
+        "-x",
+        "c++-header",
+        *BASELINE,
+    ]
+    return execute(cmd, show=show)
+
+
+def fuzz(cwe_dir, variant, seconds, out_dir, show, reproduce=None, seed=None):
+    source = cwe_dir / "fuzz.cpp"
+    if not source.exists():
+        raise LabError(f"{cwe_dir.name} has no fuzz target")
+    compile_cmd = [
+        "clang++",
+        *BASELINE,
+        "-fsanitize=fuzzer,address",
+        f'-DLAB_VARIANT="{variant}.hpp"',
+        rel(source),
+        "-o",
+        rel(out_dir / "fuzz"),
+    ]
+    code, output = execute(compile_cmd, show=show)
+    if code != 0:
+        return code, output
+    if reproduce:
+        return execute(["./fuzz", str(Path(reproduce).resolve())], cwd=out_dir, show=show)
+    corpus = out_dir / "corpus"
+    shutil.rmtree(corpus, ignore_errors=True)
+    corpus.mkdir()
+    options = [f"-max_total_time={seconds}", *([f"-seed={seed}"] if seed is not None else [])]
+    code, run_output = execute(["./fuzz", *options, "corpus"], cwd=out_dir, show=show, timeout=seconds + 60)
+    return code, output + run_output
+
+
+def cmd_list(_):
+    for cwe_dir in all_cwes():
+        meta = load_toml(cwe_dir / "cwe.toml")
+        fuzzable = "fuzz" if (cwe_dir / "fuzz.cpp").exists() else ""
+        print(f"{BOLD}{meta['id']:>4}{RESET}  {meta['title']}  {DIM}{fuzzable}{RESET}")
+
+
+def cmd_show(options):
+    cwe_dir = find_cwe(options.cwe)
+    print((cwe_dir / "README.md").read_text())
+    print(f"{DIM}Files:{RESET}")
+    for path in sorted(cwe_dir.iterdir()):
+        print(f"  {DIM}{os.path.relpath(path)}{RESET}")
+
+
+def cmd_profiles(_):
+    for name, profile in PROFILES.items():
+        compilers = "/".join(profile.get("compilers", COMPILERS))
+        print(f"{BOLD}{name:<20}{RESET}{profile['description']}  {DIM}[{compilers}]{RESET}")
+        details = profile.get("flags", []) + profile.get("runner", [])
+        if details:
+            print(f"{'':<20}{DIM}{shlex.join(details)}{RESET}")
+
+
+def cmd_run(options):
+    cwe_dir = find_cwe(options.cwe)
+    variant = "fixed" if options.fixed else "vulnerable"
+    profiles = options.profile or ["asan"]
+    optimization = [f"-O{options.O}"] if options.O else []
+    flags = optimization + [f"-D{name}" for name in options.D] + options.flag
+    args = options.args or trigger_args(cwe_dir, variant)
+    out_dir = build_dir(cwe_dir, variant, options.cc, "+".join(profiles), *flags)
+    code, _ = build_and_run(cwe_dir, variant, options.cc, profiles, flags, args, out_dir, show=True)
+    colour = GREEN if code == 0 else RED
+    print(f"{colour}Exit code {code}{RESET}")
+    return code
+
+
+def cmd_tidy(options):
+    cwe_dir = find_cwe(options.cwe)
+    variant = "fixed" if options.fixed else "vulnerable"
+    checks = options.checks or ",".join(load_toml(cwe_dir / "cwe.toml").get("tidy_checks", ["bugprone-*"]))
+    _, output = tidy(cwe_dir, variant, checks, show=True)
+    if not DIAGNOSTIC.search(output):
+        print(f"{DIM}clang-tidy found nothing{RESET}")
+    return 0
+
+
+def cmd_fuzz(options):
+    cwe_dir = find_cwe(options.cwe)
+    variant = "fixed" if options.fixed else "vulnerable"
+    out_dir = build_dir(cwe_dir, "fuzz", variant)
+    code, output = fuzz(cwe_dir, variant, options.time, out_dir, show=True, reproduce=options.reproduce)
+    if crash := re.search(r"Test unit written to \./(\S+)", output):
+        print(f"\n{BOLD}Reproduce with: cwe fuzz {options.cwe} --reproduce {rel(out_dir / crash[1])}{RESET}")
+    return code
+
+
+def expectations(cwe_dir):
+    for index, expect in enumerate(load_toml(cwe_dir / "cwe.toml").get("expect", [])):
+        compilers = expect.get("cc", "gcc")
+        for cc in [compilers] if isinstance(compilers, str) else compilers:
+            yield index, {**expect, "cc": cc}
+
+
+def describe(expect):
+    tool = expect.get("tool", "run")
+    if tool == "tidy":
+        what = "clang-tidy"
+    elif tool == "fuzz":
+        what = f"clang fuzz {expect.get('time', 60)}s"
+    else:
+        what = f"{expect['cc']} {'+'.join(expect.get('profiles', ['plain']))} {' '.join(expect.get('flags', []))}"
+    return f"{what.strip()}{' (fixed)' if expect.get('variant') == 'fixed' else ''}"
+
+
+def check(cwe_dir, index, expect):
+    variant = expect.get("variant", "vulnerable")
+    tool = expect.get("tool", "run")
+    out_dir = build_dir(cwe_dir, "matrix", str(index), expect["cc"])
+    try:
+        if tool == "tidy":
+            checks = expect.get("checks") or ",".join(load_toml(cwe_dir / "cwe.toml")["tidy_checks"])
+            code, output = tidy(cwe_dir, variant, checks, show=False)
+        elif tool == "fuzz":
+            code, output = fuzz(cwe_dir, variant, expect.get("time", 60), out_dir, show=False, seed=1)
+        else:
+            args = expect.get("args", trigger_args(cwe_dir, variant))
+            profiles = expect.get("profiles", ["plain"])
+            code, output = build_and_run(
+                cwe_dir, variant, expect["cc"], profiles, expect.get("flags", []), args, out_dir, show=False
+            )
+    except LabError as error:
+        return False, str(error), ""
+    if "detects" in expect:
+        found = re.search(expect["detects"], output)
+        return bool(found), (f"detected: {found[0]}" if found else f"missed (exit {code})"), output
+    if "misses" in expect:
+        found = re.search(expect["misses"], output)
+        return not found, (f"detected: {found[0]}" if found else f"missed (exit {code})"), output
+    silent = code == 0 and not DIAGNOSTIC.search(output)
+    return silent, ("silent" if silent else f"reported (exit {code})"), output
+
+
+def cmd_matrix(options):
+    cwe_dirs = [find_cwe(cwe_id) for cwe_id in options.cwes] or all_cwes()
+    jobs = [(cwe_dir, index, expect) for cwe_dir in cwe_dirs for index, expect in expectations(cwe_dir)]
+    with ThreadPoolExecutor(max_workers=options.jobs) as pool:
+        results = list(pool.map(lambda job: check(*job), jobs))
+    failures = 0
+    current = None
+    for (cwe_dir, _, expect), (ok, actual, output) in zip(jobs, results):
+        if cwe_dir != current:
+            current = cwe_dir
+            meta = load_toml(cwe_dir / "cwe.toml")
+            print(f"\n{BOLD}CWE-{meta['id']} {meta['title']}{RESET}")
+        if "detects" in expect:
+            expected = f"detects /{expect['detects']}/"
+        elif "misses" in expect:
+            expected = f"misses /{expect['misses']}/"
+        else:
+            expected = "silent"
+        mark = f"{GREEN}✅{RESET}" if ok else f"{RED}❌{RESET}"
+        print(f"  {mark} {describe(expect):<45} expected {expected:<40} {DIM}{actual}{RESET}")
+        if not ok:
+            failures += 1
+            if options.verbose:
+                print(DIM + "".join(output.splitlines(keepends=True)[-25:]) + RESET)
+    print(f"\n{len(jobs) - failures}/{len(jobs)} expectations hold")
+    return 1 if failures else 0
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="cwe", description="Try the CWE examples with different tools")
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    commands.add_parser("list", help="List all CWEs").set_defaults(handler=cmd_list)
+    commands.add_parser("profiles", help="List the build profiles").set_defaults(handler=cmd_profiles)
+
+    show = commands.add_parser("show", help="What to try for a CWE")
+    show.add_argument("cwe")
+    show.set_defaults(handler=cmd_show)
+
+    run = commands.add_parser("run", help="Build and run the trigger of a CWE")
+    run.add_argument("cwe")
+    run.add_argument("-p", "--profile", action="append", help="Profile(s) to combine, default: asan")
+    run.add_argument("--cc", choices=COMPILERS, default="gcc")
+    run.add_argument("--fixed", action="store_true", help="Use the fixed variant")
+    run.add_argument("-O", help="Optimization level, e.g. -O 2")
+    run.add_argument("-D", action="append", default=[], help="Define a macro")
+    run.add_argument("--flag", action="append", default=[], help="Extra compiler flag, e.g. --flag=-O1")
+    run.add_argument("args", nargs="*", help="Arguments for the trigger, after --")
+    run.set_defaults(handler=cmd_run)
+
+    tidy_parser = commands.add_parser("tidy", help="Run clang-tidy on a CWE")
+    tidy_parser.add_argument("cwe")
+    tidy_parser.add_argument("--fixed", action="store_true")
+    tidy_parser.add_argument("--checks", help="Override the checks, e.g. --checks='bugprone-*'")
+    tidy_parser.set_defaults(handler=cmd_tidy)
+
+    fuzz_parser = commands.add_parser("fuzz", help="Fuzz a CWE with libFuzzer and ASan")
+    fuzz_parser.add_argument("cwe")
+    fuzz_parser.add_argument("--fixed", action="store_true")
+    fuzz_parser.add_argument("--time", type=int, default=30, help="Seconds to fuzz")
+    fuzz_parser.add_argument("--reproduce", help="Run a single crashing input")
+    fuzz_parser.set_defaults(handler=cmd_fuzz)
+
+    matrix = commands.add_parser("matrix", help="Check what each tool detects against expectations")
+    matrix.add_argument("cwes", nargs="*")
+    matrix.add_argument("-j", "--jobs", type=int, default=os.cpu_count())
+    matrix.add_argument("-v", "--verbose", action="store_true", help="Show the output of failures")
+    matrix.set_defaults(handler=cmd_matrix)
+
+    options = parser.parse_args()
+    try:
+        return options.handler(options)
+    except LabError as error:
+        print(f"{RED}{error}{RESET}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

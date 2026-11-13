@@ -1,0 +1,43 @@
+id = 134
+title = "Use of Externally-Controlled Format String"
+tidy_checks = ["cppcoreguidelines-pro-type-vararg"]
+
+[trigger]
+args = ["Temperatur: %s °C"]
+
+[trigger.fixed]
+args = ["Temperatur: {:s} °C"]
+
+[[expect]]
+profiles = ["asan"]
+silent = true
+
+[[expect]]
+profiles = ["fortify2"]
+args = ["Temperatur: %n °C"]
+detects = "%n in writable segments detected"
+
+[[expect]]
+profiles = ["fortify2"]
+misses = "detected"
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+detects = "-Wformat-nonliteral"
+
+[[expect]]
+tool = "tidy"
+detects = "cppcoreguidelines-pro-type-vararg"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+detects = "Display: 21.5 °C"
+
+[[expect]]
+variant = "fixed"
+profiles = ["asan"]
+args = ["{} {} {} {}"]
+detects = "Display: 21.5 °C"

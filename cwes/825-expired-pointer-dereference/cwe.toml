@@ -1,0 +1,44 @@
+id = 825
+title = "Expired Pointer Dereference"
+tidy_checks = ["bugprone-*", "clang-analyzer-*"]
+
+[trigger]
+args = ["1", "1"]
+
+[[expect]]
+profiles = ["plain"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "heap-use-after-free"
+
+[[expect]]
+profiles = ["asan"]
+args = ["1", "2"]
+silent = true
+
+[[expect]]
+profiles = ["stl-debug"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["warnings"]
+silent = true
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+tool = "fuzz"
+time = 30
+detects = "heap-use-after-free"
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true

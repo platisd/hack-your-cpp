@@ -1,0 +1,26 @@
+id = 416
+title = "Use After Free"
+tidy_checks = ["bugprone-*", "clang-analyzer-*"]
+
+[[expect]]
+profiles = ["plain"]
+silent = true
+
+[[expect]]
+cc = ["gcc", "clang"]
+profiles = ["asan"]
+detects = "heap-use-after-free"
+
+[[expect]]
+profiles = ["valgrind"]
+detects = "Invalid write of size 4"
+
+[[expect]]
+tool = "tidy"
+silent = true
+
+[[expect]]
+variant = "fixed"
+cc = ["gcc", "clang"]
+profiles = ["asan", "ubsan"]
+silent = true
